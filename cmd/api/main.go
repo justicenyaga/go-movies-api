@@ -18,13 +18,15 @@ func main() {
 
 	app.Domain = "example.com"
 
-	log.Println("Starting application on port", port)
-
 	// read from command line
 
 	// connect to the database
 
 	// start a web server
+	log.Println("Starting application on port", port)
+
+	http.HandleFunc("/", Hello)
+
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Fatal(err)
