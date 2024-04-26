@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 	"vidly/internal/repository"
 	"vidly/internal/repository/dbrepo"
 )
@@ -12,19 +13,27 @@ import (
 const port = 8080
 
 type application struct {
-	Domain string
-	DSN    string
-	DB     repository.DatabaseRepo
+	Domain       string
+	DSN          string
+	DB           repository.DatabaseRepo
+	auth         Auth
+	JWTSecret    string
+	JWTIssuer    string
+	JWTAudience  string
+	CookieDomain string
 }
 
 func main() {
 	// set application config
 	var app application
 
-	app.Domain = "example.com"
-
 	// read from command line
 	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=letmein dbname=movies sslmode=disable timezone=UTC connect_timeout=5", "Postgres connection string")
+	flag.StringVar(&app.JWTSecret, "jwt-secret", "verysecret", "signing secret")
+	flag.StringVar(&app.JWTIssuer, "jwt-issuer", "example.com", "singing issuer")
+	flag.StringVar(&app.JWTAudience, "jwt-audience", "example.com", "singing audience")
+	flag.StringVar(&app.CookieDomain, "cookie-domain", "localhost", "cookie domain")
+	flag.StringVar(&app.Domain, "domain", "example.com", "domain")
 	flag.Parse()
 
 	// connect to the database
@@ -36,6 +45,18 @@ func main() {
 	defer app.DB.Connection().Close()
 
 	// start a web server
+
+	app.auth = Auth{
+		Issuer:        app.JWTIssuer,
+		Audience:      app.JWTAudience,
+		Secret:        app.JWTSecret,
+		TokenExpiry:   time.Minute * 15,
+		RefreshExpiry: time.Hour * 24,
+		CookiePath:    "/",
+		CookieName:    "__Host-refresh_token",
+		CookieDomain:  app.CookieDomain,
+	}
+
 	log.Println("Starting application on port", port)
 
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), app.routes())
