@@ -27,3 +27,27 @@ func (app *application) AllMovies(w http.ResponseWriter, r *http.Request) {
 
 	_ = app.writeJSON(w, http.StatusOK, movies)
 }
+
+func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
+	// read json payload
+
+	// validate user against database
+
+	// check password
+
+	// create a jwt user
+	u := jwtUser{
+		ID:        1,
+		FirstName: "Admin",
+		LastName:  "User",
+	}
+
+	// generate tokens
+	tokens, err := app.auth.GenerateTokenPair(&u)
+	if err != nil {
+		_ = app.errorJSON(w, err)
+		return
+	}
+
+	w.Write([]byte(tokens.Token))
+}
